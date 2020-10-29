@@ -22,11 +22,11 @@ impl Op {
     }
 }
 
-const PREC_EOF: i32 = 0;
-const PREC_TERM: i32 = 1;
-const PREC_MUL: i32 = 2;
-const PREC_ADD: i32 = 3;
-const PREC_PAREN: i32 = 4;
+const PREC_EOF: i32 = 5;
+const PREC_TERM: i32 = 4;
+const PREC_MUL: i32 = 3;
+const PREC_ADD: i32 = 2;
+const PREC_PAREN: i32 = 1;
 
 /// All of the possible tokens for the compiler, this limits the compiler
 /// to simple math expressions.
@@ -97,7 +97,7 @@ fn lex(input: &str) -> Result<Vec<Token>, BadInput> {
 
             // Numbers
             '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => {
-                let num: i32 = (character as u8 - '0' as u8).into();
+                let num: i32 = (character as u8 - '0' as u8) as i32;
                 if result.len() == 0 {
                     result.push(Number(num));
                     continue;
@@ -124,12 +124,6 @@ fn lex(input: &str) -> Result<Vec<Token>, BadInput> {
     Ok(result)
 }
 
-#[test]
-fn basic_lexing() {
-    assert!(lex("420 + 69").is_ok());
-    assert_eq!(lex("420"), Ok(vec![Token::Number(420)]));
-}
-
 fn main() -> io::Result<()> {
     let stdin = io::stdin();
     let mut input = String::new();
@@ -139,4 +133,32 @@ fn main() -> io::Result<()> {
     println!("{:#?}", tokens);
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Op::*, Token::*, *};
+
+    #[test]
+    fn basic_lexing() {
+        assert!(lex("420 + 69").is_ok());
+        assert!(lex("tacos are tasty").is_err());
+
+        assert_eq!(
+            lex("420 + 69"),
+            Ok(vec![Number(420), Operation(Add), Number(69)])
+        );
+        assert_eq!(
+            lex("(30 + 560) / 4"),
+            Ok(vec![
+                LeftParen,
+                Number(30),
+                Operation(Add),
+                Number(560),
+                RightParen,
+                Operation(Div),
+                Number(4)
+            ])
+        );
+    }
 }
