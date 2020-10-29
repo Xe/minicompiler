@@ -1,6 +1,6 @@
 use std::error::Error;
 use std::fmt;
-use std::io::{self, Read};
+use std::io;
 
 /// Mathematical operations that our compiler can do.
 #[derive(Debug, Eq, PartialEq)]
@@ -11,6 +11,23 @@ enum Op {
     Sub,
 }
 
+impl Op {
+    fn precedence(&self) -> i32 {
+        use Op::*;
+
+        match self {
+            Mul | Div => PREC_MUL,
+            Add | Sub => PREC_ADD,
+        }
+    }
+}
+
+const PREC_EOF: i32 = 0;
+const PREC_TERM: i32 = 1;
+const PREC_MUL: i32 = 2;
+const PREC_ADD: i32 = 3;
+const PREC_PAREN: i32 = 4;
+
 /// All of the possible tokens for the compiler, this limits the compiler
 /// to simple math expressions.
 #[derive(Debug, Eq, PartialEq)]
@@ -20,6 +37,19 @@ enum Token {
     Operation(Op),
     LeftParen,
     RightParen,
+}
+
+impl Token {
+    fn precedence(&self) -> i32 {
+        use Token::*;
+
+        match self {
+            EOF => PREC_EOF,
+            Number(_) => PREC_TERM,
+            Operation(op) => op.precedence(),
+            LeftParen | RightParen => PREC_PAREN,
+        }
+    }
 }
 
 /// The error that gets returned on bad input. This only tells the user that it's
